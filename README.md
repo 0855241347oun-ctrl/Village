@@ -98,6 +98,7 @@
 - เขียน **Unit Tests** & **Integration Tests** ด้วย Vitest สำหรับฟังก์ชันการคำนวณและดึงข้อมูล
 - ตั้งค่า **GitHub Actions** ตรวจสอบการ Build และ Run Test อัตโนมัติทุกครั้งที่มีการ Push โค้ดขึ้น Repository
 
+supabase = ewplQ5PjVpT7UBTH
 ---
 
 ## 🛠️ 3. การติดตั้งและเริ่มต้นใช้งาน (Getting Started)

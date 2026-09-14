@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../lib/auth';
-import { Building2, Eye, EyeOff } from 'lucide-react';
+import { Building2, Eye, EyeOff, Sparkles, Phone, MapPin } from 'lucide-react';
+import { VILLAGES } from '../lib/constants';
 
 export default function LoginPage() {
   const { signIn, signUp } = useAuth();
@@ -8,6 +9,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [villageName, setVillageName] = useState('');
+  const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -26,14 +29,28 @@ export default function LoginPage() {
           setLoading(false);
           return;
         }
-        const { error } = await signUp(email, password, fullName);
+        if (!villageName) {
+          setError('กรุณาเลือกหมู่บ้าน');
+          setLoading(false);
+          return;
+        }
+        if (!phone.trim()) {
+          setError('กรุณากรอกเบอร์โทรศัพท์');
+          setLoading(false);
+          return;
+        }
+        const { error } = await signUp(email, password, fullName, villageName, phone);
         if (error) {
           setError(error.message === 'User already registered'
             ? 'อีเมลนี้ถูกใช้งานแล้ว'
             : error.message);
         } else {
-          setSuccess('สมัครสมาชิกสำเร็จ! กรุณาตรวจสอบอีเมลเพื่อยืนยัน หรือลองเข้าสู่ระบบ');
+          setSuccess('สมัครสมาชิกสำเร็จ! บัญชีของคุณอยู่ระหว่างรอการอนุมัติจากผู้ดูแลระบบ กรุณาลองเข้าสู่ระบบเพื่อตรวจสอบสถานะ');
           setIsRegister(false);
+          setFullName('');
+          setVillageName('');
+          setPhone('');
+          setPassword('');
         }
       } else {
         const { error } = await signIn(email, password);
@@ -53,11 +70,16 @@ export default function LoginPage() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-logo">
-          <div className="login-logo-icon">
-            <Building2 size={32} />
+          <div className="gemini-pill-tag" style={{ margin: '0 auto 12px auto' }}>
+            <Sparkles size={13} className="gemini-sparkle-spin" /> Gemini AI Experience
           </div>
-          <h1>Village Management</h1>
-          <p>ระบบจัดการข้อมูลคนในหมู่บ้าน</p>
+          <div className="login-logo-icon">
+            <Sparkles size={34} className="gemini-sparkle-spin" />
+          </div>
+          <h1 className="gemini-brand-title" style={{ justifyContent: 'center', fontSize: '1.75rem' }}>
+            Village <span className="gemini-ai-badge">AI</span>
+          </h1>
+          <p>ระบบจัดการหมู่บ้านอัจฉริยะ โฉมใหม่สไตล์ Gemini</p>
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
@@ -65,19 +87,54 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit}>
           {isRegister && (
-            <div className="form-group">
-              <label className="form-label">
-                ชื่อ-นามสกุล <span className="required">*</span>
-              </label>
-              <input
-                type="text"
-                className="form-input"
-                placeholder="กรอกชื่อ-นามสกุล"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-              />
-            </div>
+            <>
+              <div className="form-group">
+                <label className="form-label">
+                  ชื่อ-นามสกุล <span className="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="กรอกชื่อ-นามสกุล"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">
+                  <MapPin size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
+                  เลือกบัญชีหมู่บ้าน <span className="required">*</span>
+                </label>
+                <select
+                  className="form-select"
+                  value={villageName}
+                  onChange={(e) => setVillageName(e.target.value)}
+                  required
+                >
+                  <option value="">-- เลือกหมู่บ้าน --</option>
+                  {VILLAGES.map((v) => (
+                    <option key={v} value={v}>{v}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">
+                  <Phone size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
+                  เบอร์โทรศัพท์ <span className="required">*</span>
+                </label>
+                <input
+                  type="tel"
+                  className="form-input"
+                  placeholder="เช่น 081-234-5678"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                />
+              </div>
+            </>
           )}
 
           <div className="form-group">

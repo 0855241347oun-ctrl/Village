@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
+import { supabase } from '../lib/supabase';
 import {
   LayoutDashboard,
   MapPin,
@@ -13,11 +14,35 @@ import {
   Sun,
   Moon,
   Building2,
+  Sparkles,
 } from 'lucide-react';
 
 function Sidebar({ isOpen, onClose }) {
   const { profile, signOut, isSuperAdmin } = useAuth();
   const location = useLocation();
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      fetchPendingCount();
+      // Subscribe to real-time changes on profiles table
+      const channel = supabase
+        .channel('pending-users')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+          fetchPendingCount();
+        })
+        .subscribe();
+      return () => supabase.removeChannel(channel);
+    }
+  }, [isSuperAdmin]);
+
+  async function fetchPendingCount() {
+    const { count } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending');
+    setPendingCount(count || 0);
+  }
 
   const navLinks = [
     { to: '/', icon: LayoutDashboard, label: 'แดชบอร์ด' },
@@ -27,7 +52,7 @@ function Sidebar({ isOpen, onClose }) {
   ];
 
   const adminLinks = [
-    { to: '/admin/users', icon: Shield, label: 'จัดการผู้ใช้' },
+    { to: '/admin/users', icon: Shield, label: 'จัดการผู้ใช้', badge: pendingCount },
   ];
 
   const isActive = (path) => {
@@ -55,11 +80,11 @@ function Sidebar({ isOpen, onClose }) {
       <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-brand">
           <div className="sidebar-brand-icon">
-            <Building2 size={22} />
+            <Sparkles size={22} className="gemini-sparkle-spin" />
           </div>
           <div>
-            <h1>Village</h1>
-            <span>ระบบจัดการหมู่บ้าน</span>
+            <h1 className="gemini-brand-title">Village <span className="gemini-ai-badge">AI</span></h1>
+            <span className="gemini-brand-sub">ระบบจัดการหมู่บ้านอัจฉริยะ</span>
           </div>
         </div>
 
@@ -86,9 +111,30 @@ function Sidebar({ isOpen, onClose }) {
                   to={link.to}
                   className={`sidebar-link ${isActive(link.to) ? 'active' : ''}`}
                   onClick={onClose}
+                  style={{ position: 'relative' }}
                 >
                   <link.icon className="sidebar-link-icon" size={20} />
                   {link.label}
+                  {link.badge > 0 && (
+                    <span style={{
+                      marginLeft: 'auto',
+                      background: 'linear-gradient(135deg, #ea4335, #f9ab00)',
+                      color: 'white',
+                      fontSize: 11,
+                      fontWeight: 800,
+                      borderRadius: 'var(--radius-full)',
+                      minWidth: 22,
+                      height: 22,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0 6px',
+                      boxShadow: '0 2px 8px rgba(234,67,53,0.4)',
+                      animation: 'geminiPulse 2s ease-in-out infinite',
+                    }}>
+                      {link.badge}
+                    </span>
+                  )}
                 </Link>
               ))}
             </>
@@ -186,6 +232,9 @@ export default function Layout({ children }) {
           >
             <Menu size={24} />
           </button>
+          <div className="gemini-pill-tag" style={{ margin: 0, display: 'inline-flex' }}>
+            <Sparkles size={13} className="gemini-sparkle-spin" /> Gemini AI System
+          </div>
         </div>
         <div className="header-right">
           <button className="theme-toggle" onClick={toggleTheme} title="สลับธีม">

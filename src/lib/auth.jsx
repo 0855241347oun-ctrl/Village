@@ -50,12 +50,16 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function signUp(email, password, fullName) {
+  async function signUp(email, password, fullName, villageName, phone) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: {
+          full_name: fullName,
+          village_name: villageName,
+          phone: phone,
+        },
       },
     });
     return { data, error };
@@ -82,8 +86,12 @@ export function AuthProvider({ children }) {
     if (user) {
       const p = await fetchProfile(user.id);
       setProfile(p);
+      return p;
     }
+    return null;
   }
+
+  const isApproved = profile?.status === 'approved' || profile?.role === 'super_admin';
 
   const value = {
     user,
@@ -94,6 +102,8 @@ export function AuthProvider({ children }) {
     signOut,
     refreshProfile,
     isSuperAdmin: profile?.role === 'super_admin',
+    isApproved,
+    status: profile?.status || 'pending',
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

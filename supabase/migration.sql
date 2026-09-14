@@ -9,6 +9,9 @@ CREATE TABLE IF NOT EXISTS profiles (
   email TEXT NOT NULL,
   full_name TEXT,
   role TEXT DEFAULT 'user' CHECK (role IN ('super_admin', 'user')),
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  village_name TEXT,
+  phone TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -96,17 +99,34 @@ CREATE POLICY "Authenticated users can delete residents" ON residents FOR DELETE
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  is_first_user BOOLEAN;
 BEGIN
-  INSERT INTO public.profiles (id, email, full_name, role)
+  SELECT NOT EXISTS (SELECT 1 FROM public.profiles) INTO is_first_user;
+
+  INSERT INTO public.profiles (
+    id,
+    email,
+    full_name,
+    role,
+    status,
+    village_name,
+    phone
+  )
   VALUES (
     NEW.id,
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
     CASE
-      WHEN NOT EXISTS (SELECT 1 FROM public.profiles)
-      THEN 'super_admin'
+      WHEN is_first_user THEN 'super_admin'
       ELSE 'user'
-    END
+    END,
+    CASE
+      WHEN is_first_user THEN 'approved'
+      ELSE 'pending'
+    END,
+    COALESCE(NEW.raw_user_meta_data->>'village_name', ''),
+    COALESCE(NEW.raw_user_meta_data->>'phone', '')
   );
   RETURN NEW;
 END;

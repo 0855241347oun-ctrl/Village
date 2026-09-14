@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Modal from '../components/Modal';
+import CustomSelect from '../components/CustomSelect';
 import {
   maskIdCard, formatIdCard, calculateAge, formatThaiDate, formatDateForInput,
   EDUCATION_OPTIONS, MARITAL_STATUS_OPTIONS,
@@ -288,19 +289,16 @@ export default function ResidentDetailPage() {
 
           <div className="form-group">
             <label className="form-label">บ้าน <span className="required">*</span></label>
-            <select
-              className="form-select"
+            <CustomSelect
               value={formData.house_id}
               onChange={(e) => setFormData({ ...formData, house_id: e.target.value })}
+              options={houses.map(h => ({
+                value: h.id,
+                label: `${h.zones?.name || 'ไม่มีโซน'} — เลขที่ ${h.house_number}`
+              }))}
+              placeholder="เลือกบ้าน"
               required
-            >
-              <option value="">เลือกบ้าน</option>
-              {houses.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.zones?.name} — เลขที่ {h.house_number}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           <div className="form-row">
@@ -350,21 +348,23 @@ export default function ResidentDetailPage() {
             </div>
             <div className="form-group">
               <label className="form-label">สถานภาพ</label>
-              <select className="form-select" value={formData.marital_status}
-                onChange={(e) => setFormData({ ...formData, marital_status: e.target.value })}>
-                <option value="">เลือก</option>
-                {MARITAL_STATUS_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-              </select>
+              <CustomSelect
+                value={formData.marital_status}
+                onChange={(e) => setFormData({ ...formData, marital_status: e.target.value })}
+                options={MARITAL_STATUS_OPTIONS.map(o => ({ value: o, label: o }))}
+                placeholder="เลือก"
+              />
             </div>
           </div>
 
           <div className="form-group">
             <label className="form-label">การศึกษา</label>
-            <select className="form-select" value={formData.education}
-              onChange={(e) => setFormData({ ...formData, education: e.target.value })}>
-              <option value="">เลือก</option>
-              {EDUCATION_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
+            <CustomSelect
+              value={formData.education}
+              onChange={(e) => setFormData({ ...formData, education: e.target.value })}
+              options={EDUCATION_OPTIONS.map(o => ({ value: o, label: o }))}
+              placeholder="เลือก"
+            />
           </div>
 
           <div className="form-group">

@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../lib/auth';
 import Modal from '../components/Modal';
+import CustomSelect from '../components/CustomSelect';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { Home, Plus, Pencil, Trash2, Users, ChevronRight, MapPin, RotateCcw } from 'lucide-react';
 
 export default function HousesPage() {
+  const { isSuperAdmin, adminVillageContext } = useAuth();
   const [searchParams] = useSearchParams();
   const [houses, setHouses] = useState([]);
   const [zones, setZones] = useState([]);
@@ -21,14 +24,18 @@ export default function HousesPage() {
 
   useEffect(() => {
     fetchZones();
-  }, []);
+  }, [adminVillageContext]);
 
   useEffect(() => {
     fetchHouses();
-  }, [selectedZone]);
+  }, [selectedZone, adminVillageContext]);
 
   async function fetchZones() {
-    const { data } = await supabase.from('zones').select('*').order('name');
+    let query = supabase.from('zones').select('*').order('name');
+    if (isSuperAdmin && adminVillageContext !== 'all') {
+      query = query.eq('village_name', adminVillageContext);
+    }
+    const { data } = await query;
     setZones(data || []);
   }
 
@@ -40,6 +47,9 @@ export default function HousesPage() {
 
     if (selectedZone) {
       query = query.eq('zone_id', selectedZone);
+    }
+    if (isSuperAdmin && adminVillageContext !== 'all') {
+      query = query.eq('village_name', adminVillageContext);
     }
 
     const { data } = await query;
@@ -90,6 +100,16 @@ export default function HousesPage() {
         return;
       }
     } else {
+      if (isSuperAdmin && adminVillageContext === 'all') {
+        setError('กรุณาเลือกหมู่บ้านที่ต้องการเพิ่มข้อมูลจากเมนูด้านซ้าย');
+        setSaving(false);
+        return;
+      }
+      
+      if (isSuperAdmin && adminVillageContext !== 'all') {
+        payload.village_name = adminVillageContext;
+      }
+
       const { error } = await supabase.from('houses').insert(payload);
       if (error) {
         setError(error.message.includes('duplicate') ? 'บ้านเลขที่นี้ซ้ำในโซนเดียวกัน' : error.message);
@@ -122,26 +142,24 @@ export default function HousesPage() {
           <h1 className="page-title">บ้านเลขที่</h1>
           <p className="page-subtitle">จัดการบ้านเลขที่ในหมู่บ้าน</p>
         </div>
-        <button className="btn btn-primary" onClick={() => openModal()}>
-          <Plus size={18} />
-          เพิ่มบ้าน
-        </button>
+        {(!isSuperAdmin || adminVillageContext !== 'all') && (
+          <button className="btn btn-primary" onClick={() => openModal()}>
+            <Plus size={18} />
+            เพิ่มบ้าน
+          </button>
+        )}
       </div>
 
       {/* Filter */}
       <div className="filter-bar">
         <div className="filter-group">
           <label><MapPin size={14} /> โซนที่ตั้ง</label>
-          <select
-            className="form-select"
+          <CustomSelect
             value={selectedZone}
             onChange={(e) => setSelectedZone(e.target.value)}
-          >
-            <option value="">ทั้งหมด (ทุกโซน)</option>
-            {zones.map((z) => (
-              <option key={z.id} value={z.id}>{z.name}</option>
-            ))}
-          </select>
+            options={zones.map(z => ({ value: z.id, label: z.name }))}
+            placeholder="ทั้งหมด (ทุกโซน)"
+          />
         </div>
         {selectedZone && (
           <button
@@ -160,11 +178,13 @@ export default function HousesPage() {
         <div className="card">
           <div className="empty-state">
             <Home className="empty-state-icon" size={48} />
-            <p className="empty-state-title">ยังไม่มีบ้านเลขที่</p>
-            <p className="empty-state-text">เริ่มต้นโดยการเพิ่มบ้านเลขที่</p>
-            <button className="btn btn-primary" onClick={() => openModal()}>
-              <Plus size={18} /> เพิ่มบ้านแรก
-            </button>
+            <p className="empty-state-title">ยังไม่มีข้อมูลบ้าน</p>
+            <p className="empty-state-text">เริ่มต้นโดยการเพิ่มบ้านในระบบ</p>
+            {(!isSuperAdmin || adminVillageContext !== 'all') && (
+              <button className="btn btn-primary" onClick={() => openModal()}>
+                <Plus size={18} /> เพิ่มบ้านหลังแรก
+              </button>
+            )}
           </div>
         </div>
       ) : (
@@ -228,17 +248,13 @@ export default function HousesPage() {
             <label className="form-label">
               โซน <span className="required">*</span>
             </label>
-            <select
-              className="form-select"
+            <CustomSelect
               value={formData.zone_id}
               onChange={(e) => setFormData({ ...formData, zone_id: e.target.value })}
+              options={zones.map(z => ({ value: z.id, label: z.name }))}
+              placeholder="เลือกโซน"
               required
-            >
-              <option value="">เลือกโซน</option>
-              {zones.map((z) => (
-                <option key={z.id} value={z.id}>{z.name}</option>
-              ))}
-            </select>
+            />
           </div>
           <div className="form-group">
             <label className="form-label">

@@ -4,13 +4,14 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
+import CustomSelect from '../components/CustomSelect';
 import { maskIdCard, calculateAge, formatDateForInput, EDUCATION_OPTIONS, MARITAL_STATUS_OPTIONS } from '../lib/utils';
 import {
   Users, Plus, Pencil, Trash2, Search, Eye, UserPlus, RotateCcw, MapPin, Home, Phone, Calendar,
 } from 'lucide-react';
 
 export default function ResidentsPage() {
-  const { user } = useAuth();
+  const { user, isSuperAdmin, adminVillageContext } = useAuth();
   const [searchParams] = useSearchParams();
   const [residents, setResidents] = useState([]);
   const [zones, setZones] = useState([]);
@@ -44,11 +45,11 @@ export default function ResidentsPage() {
 
   useEffect(() => {
     fetchZonesAndHouses();
-  }, []);
+  }, [adminVillageContext]);
 
   useEffect(() => {
     fetchResidents();
-  }, [selectedZone, selectedHouse]);
+  }, [selectedZone, selectedHouse, adminVillageContext]);
 
   useEffect(() => {
     if (selectedZone) {
@@ -69,9 +70,17 @@ export default function ResidentsPage() {
   }, [selectedHouse, houses]);
 
   async function fetchZonesAndHouses() {
+    let zonesQuery = supabase.from('zones').select('*').order('name');
+    let housesQuery = supabase.from('houses').select('*, zones(name)').order('house_number');
+
+    if (isSuperAdmin && adminVillageContext !== 'all') {
+      zonesQuery = zonesQuery.eq('village_name', adminVillageContext);
+      housesQuery = housesQuery.eq('village_name', adminVillageContext);
+    }
+
     const [zonesRes, housesRes] = await Promise.all([
-      supabase.from('zones').select('*').order('name'),
-      supabase.from('houses').select('*, zones(name)').order('house_number'),
+      zonesQuery,
+      housesQuery,
     ]);
     setZones(zonesRes.data || []);
     setHouses(housesRes.data || []);
@@ -82,6 +91,10 @@ export default function ResidentsPage() {
       .from('residents')
       .select('*, houses(house_number, zone_id, zones(name))')
       .order('first_name');
+
+    if (isSuperAdmin && adminVillageContext !== 'all') {
+      query = query.eq('village_name', adminVillageContext);
+    }
 
     if (selectedHouse) {
       query = query.eq('house_id', selectedHouse);
@@ -166,6 +179,16 @@ export default function ResidentsPage() {
         .eq('id', editingResident.id);
       if (error) { setError(error.message); setSaving(false); return; }
     } else {
+      if (isSuperAdmin && adminVillageContext === 'all') {
+        setError('กรุณาเลือกหมู่บ้านที่ต้องการเพิ่มข้อมูลจากเมนูด้านซ้าย');
+        setSaving(false);
+        return;
+      }
+      
+      if (isSuperAdmin && adminVillageContext !== 'all') {
+        payload.village_name = adminVillageContext;
+      }
+
       const { error } = await supabase
         .from('residents')
         .insert({ ...payload, created_by: user.id });
@@ -201,44 +224,39 @@ export default function ResidentsPage() {
               : ''}
           </p>
         </div>
-        <button className="btn btn-primary" onClick={() => openModal()}>
-          <UserPlus size={18} />
-          เพิ่มสมาชิก
-        </button>
+        {(!isSuperAdmin || adminVillageContext !== 'all') && (
+          <button className="btn btn-primary" onClick={() => openModal()}>
+            <UserPlus size={18} />
+            เพิ่มประชากร
+          </button>
+        )}
       </div>
 
       {/* Cascading Filter */}
       <div className="filter-bar">
         <div className="filter-group">
           <label><MapPin size={14} /> โซนที่ตั้ง</label>
-          <select
-            className="form-select"
+          <CustomSelect
             value={selectedZone}
             onChange={(e) => {
               setSelectedZone(e.target.value);
               setSelectedHouse('');
             }}
-          >
-            <option value="">ทั้งหมด (ทุกโซน)</option>
-            {zones.map((z) => (
-              <option key={z.id} value={z.id}>{z.name}</option>
-            ))}
-          </select>
+            options={zones.map(z => ({ value: z.id, label: z.name }))}
+            placeholder="ทั้งหมด (ทุกโซน)"
+          />
         </div>
         <div className="filter-group">
           <label><Home size={14} /> บ้านเลขที่</label>
-          <select
-            className="form-select"
+          <CustomSelect
             value={selectedHouse}
             onChange={(e) => setSelectedHouse(e.target.value)}
-          >
-            <option value="">ทั้งหมด (ทุกบ้าน)</option>
-            {filteredHouses.map((h) => (
-              <option key={h.id} value={h.id}>
-                {h.house_number} {!selectedZone && h.zones ? `(${h.zones.name})` : ''}
-              </option>
-            ))}
-          </select>
+            options={filteredHouses.map(h => ({ 
+              value: h.id, 
+              label: `${h.house_number} ${!selectedZone && h.zones ? `(${h.zones.name})` : ''}`.trim()
+            }))}
+            placeholder="ทั้งหมด (ทุกบ้าน)"
+          />
         </div>
         <div className="filter-group">
           <label><Search size={14} /> ค้นหาชื่อ/เลขบัตร</label>
@@ -275,13 +293,15 @@ export default function ResidentsPage() {
         <div className="card">
           <div className="empty-state">
             <Users className="empty-state-icon" size={48} />
-            <p className="empty-state-title">ไม่พบข้อมูลสมาชิก</p>
+            <p className="empty-state-title">ไม่พบข้อมูลประชากร</p>
             <p className="empty-state-text">
-              {searchTerm ? 'ลองเปลี่ยนคำค้นหา' : 'เริ่มต้นโดยการเพิ่มสมาชิก'}
+              {searchTerm || selectedZone || selectedHouse
+                ? 'ลองเปลี่ยนเงื่อนไขการค้นหาใหม่'
+                : 'เริ่มต้นโดยการเพิ่มข้อมูลประชากรคนแรก'}
             </p>
-            {!searchTerm && (
+            {!searchTerm && !selectedZone && !selectedHouse && (!isSuperAdmin || adminVillageContext !== 'all') && (
               <button className="btn btn-primary" onClick={() => openModal()}>
-                <UserPlus size={18} /> เพิ่มสมาชิกคนแรก
+                <UserPlus size={18} /> เพิ่มคนแรก
               </button>
             )}
           </div>
@@ -423,19 +443,16 @@ export default function ResidentsPage() {
             <label className="form-label">
               บ้าน <span className="required">*</span>
             </label>
-            <select
-              className="form-select"
+            <CustomSelect
               value={formData.house_id}
               onChange={(e) => setFormData({ ...formData, house_id: e.target.value })}
+              options={houses.map(h => ({ 
+                value: h.id, 
+                label: `${h.zones?.name || 'ไม่มีโซน'} — เลขที่ ${h.house_number}`
+              }))}
+              placeholder="เลือกบ้าน"
               required
-            >
-              <option value="">เลือกบ้าน</option>
-              {houses.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.zones?.name} — เลขที่ {h.house_number}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           <div className="form-row">
@@ -525,31 +542,23 @@ export default function ResidentsPage() {
             </div>
             <div className="form-group">
               <label className="form-label">สถานภาพ</label>
-              <select
-                className="form-select"
+              <CustomSelect
                 value={formData.marital_status}
                 onChange={(e) => setFormData({ ...formData, marital_status: e.target.value })}
-              >
-                <option value="">เลือกสถานภาพ</option>
-                {MARITAL_STATUS_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
+                options={MARITAL_STATUS_OPTIONS.map(opt => ({ value: opt, label: opt }))}
+                placeholder="เลือกสถานภาพ"
+              />
             </div>
           </div>
 
           <div className="form-group">
             <label className="form-label">การศึกษา</label>
-            <select
-              className="form-select"
+            <CustomSelect
               value={formData.education}
               onChange={(e) => setFormData({ ...formData, education: e.target.value })}
-            >
-              <option value="">เลือกระดับการศึกษา</option>
-              {EDUCATION_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
+              options={EDUCATION_OPTIONS.map(opt => ({ value: opt, label: opt }))}
+              placeholder="เลือกระดับการศึกษา"
+            />
           </div>
 
           <div className="form-group">

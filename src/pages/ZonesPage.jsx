@@ -7,7 +7,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { MapPin, Plus, Pencil, Trash2, Home, ChevronRight } from 'lucide-react';
 
 export default function ZonesPage() {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, adminVillageContext } = useAuth();
   const [zones, setZones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -20,13 +20,19 @@ export default function ZonesPage() {
 
   useEffect(() => {
     fetchZones();
-  }, []);
+  }, [adminVillageContext]);
 
   async function fetchZones() {
-    const { data, error } = await supabase
+    let query = supabase
       .from('zones')
       .select('*, houses(id)')
       .order('name');
+
+    if (isSuperAdmin && adminVillageContext !== 'all') {
+      query = query.eq('village_name', adminVillageContext);
+    }
+
+    const { data, error } = await query;
 
     if (!error) {
       setZones(data.map((z) => ({ ...z, houseCount: z.houses?.length || 0 })));
@@ -62,9 +68,20 @@ export default function ZonesPage() {
         return;
       }
     } else {
+      if (isSuperAdmin && adminVillageContext === 'all') {
+        setError('กรุณาเลือกหมู่บ้านที่ต้องการเพิ่มข้อมูลจากเมนูด้านซ้าย');
+        setSaving(false);
+        return;
+      }
+
+      const payload = { name: formData.name, description: formData.description };
+      if (isSuperAdmin && adminVillageContext !== 'all') {
+        payload.village_name = adminVillageContext;
+      }
+
       const { error } = await supabase
         .from('zones')
-        .insert({ name: formData.name, description: formData.description });
+        .insert(payload);
       if (error) {
         setError(error.message.includes('duplicate') ? 'ชื่อโซนนี้มีอยู่แล้ว' : error.message);
         setSaving(false);
@@ -100,7 +117,7 @@ export default function ZonesPage() {
           <h1 className="page-title">โซนในหมู่บ้าน</h1>
           <p className="page-subtitle">จัดการโซนพื้นที่ในหมู่บ้าน</p>
         </div>
-        {isSuperAdmin && (
+        {(!isSuperAdmin || adminVillageContext !== 'all') && (
           <button className="btn btn-primary" onClick={() => openModal()}>
             <Plus size={18} />
             เพิ่มโซน
@@ -114,7 +131,7 @@ export default function ZonesPage() {
             <MapPin className="empty-state-icon" size={48} />
             <p className="empty-state-title">ยังไม่มีข้อมูลโซน</p>
             <p className="empty-state-text">เริ่มต้นโดยการเพิ่มโซนในหมู่บ้าน</p>
-            {isSuperAdmin && (
+            {(!isSuperAdmin || adminVillageContext !== 'all') && (
               <button className="btn btn-primary" onClick={() => openModal()}>
                 <Plus size={18} /> เพิ่มโซนแรก
               </button>
@@ -134,24 +151,22 @@ export default function ZonesPage() {
                   <div className="stat-card-icon purple">
                     <MapPin size={22} />
                   </div>
-                  {isSuperAdmin && (
-                    <div className="flex gap-sm" onClick={(e) => e.preventDefault()}>
-                      <button
-                        className="btn btn-ghost btn-icon btn-sm"
-                        onClick={(e) => { e.preventDefault(); openModal(zone); }}
-                        title="แก้ไข"
-                      >
-                        <Pencil size={16} />
-                      </button>
-                      <button
-                        className="btn btn-ghost btn-icon btn-sm text-danger"
-                        onClick={(e) => { e.preventDefault(); setDeleteTarget(zone); }}
-                        title="ลบ"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex gap-sm" onClick={(e) => e.preventDefault()}>
+                    <button
+                      className="btn btn-ghost btn-icon btn-sm"
+                      onClick={(e) => { e.preventDefault(); openModal(zone); }}
+                      title="แก้ไข"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      className="btn btn-ghost btn-icon btn-sm text-danger"
+                      onClick={(e) => { e.preventDefault(); setDeleteTarget(zone); }}
+                      title="ลบ"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
                 <h3 className="zone-card-name">{zone.name}</h3>
                 {zone.description && (

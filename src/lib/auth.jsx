@@ -7,6 +7,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [adminVillageContext, setAdminVillageContext] = useState('all');
 
   async function fetchProfile(userId) {
     const { data, error } = await supabase
@@ -97,6 +98,8 @@ export function AuthProvider({ children }) {
     user,
     profile,
     loading,
+    adminVillageContext,
+    setAdminVillageContext,
     signUp,
     signIn,
     signOut,

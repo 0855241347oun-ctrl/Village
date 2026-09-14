@@ -1,12 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* ============================================
-   Google Gemini AI Design System — Village Management
+   Google Gemini Design System — Village Management
    Deep Cosmic Dark / Clean Crisp Light + Aurora Mesh
    ============================================ */
 
 :root {
-  /* Gemini AI Color Palette — Light Mode */
+  color-scheme: light;
+  /* Gemini Color Palette — Light Mode */
   --color-primary: #1a73e8;
   --color-primary-light: #4285f4;
   --color-primary-dark: #1557b0;
@@ -92,7 +93,7 @@
   --radius-full: 9999px;
 
   /* Typography */
-  --font-thai: 'IBM Plex Sans Thai', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-thai: 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-en: 'Plus Jakarta Sans', 'Outfit', 'Inter', sans-serif;
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
@@ -119,9 +120,10 @@
 }
 
 /* ============================================
-   Gemini AI Dark Theme (Deep Cosmic Charcoal)
+   Gemini Dark Theme (Deep Cosmic Charcoal)
    ============================================ */
 [data-theme="dark"] {
+  color-scheme: dark;
   --color-primary: #8ab4f8;
   --color-primary-light: #aecbfa;
   --color-primary-dark: #4285f4;
@@ -198,6 +200,12 @@ html {
   scroll-behavior: smooth;
 }
 
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+}
+
 body {
   font-family: var(--font-thai);
   background-color: var(--bg-body);
@@ -222,6 +230,7 @@ body {
 
 #root {
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 a {
@@ -245,11 +254,12 @@ input, select, textarea, button {
 }
 
 /* ============================================
-   Gemini AI Signature Utilities
+   Gemini Signature Utilities
    ============================================ */
 .gemini-text-gradient {
   background: linear-gradient(135deg, #4285f4 0%, #9b72cf 50%, #d96570 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
 }
@@ -318,10 +328,15 @@ input, select, textarea, button {
 .app-layout {
   display: flex;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .main-content {
   flex: 1;
+  min-width: 0;
+  width: 100%;
   margin-left: var(--sidebar-width);
   padding: var(--space-xl);
   padding-top: calc(var(--header-height) + var(--space-xl));
@@ -727,76 +742,87 @@ input, select, textarea, button {
   border-color: rgba(155, 114, 207, 0.4);
 }
 
-/* Stat Cards (Gemini AI Telemetry) */
+/* Stat Cards (Gemini Telemetry) */
 .stat-card {
   position: relative;
   overflow: hidden;
   background: var(--bg-card);
   border-radius: var(--radius-2xl);
   border: 1px solid var(--border-color);
-  padding: var(--space-xl);
+  padding: 1.5rem;
+  display: grid;
+  grid-template-areas: 
+    "value icon"
+    "label icon";
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem 1rem;
+  align-items: center;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--bg-gradient-gemini);
+  display: none;
 }
 
 .stat-card-icon {
+  grid-area: icon;
   width: 52px;
   height: 52px;
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: var(--space-md);
-  transition: transform var(--transition-fast);
+  margin-bottom: 0;
+  transition: transform 0.3s ease;
 }
 
 .card:hover .stat-card-icon {
-  transform: scale(1.08);
+  transform: scale(1.08) rotate(5deg);
 }
 
 .stat-card-icon.purple {
-  background: rgba(155, 114, 207, 0.15);
+  background: rgba(155, 114, 207, 0.12);
   color: #9b72cf;
-  box-shadow: 0 4px 14px rgba(155, 114, 207, 0.2);
+  box-shadow: none;
 }
 
 .stat-card-icon.blue {
-  background: rgba(66, 133, 244, 0.15);
+  background: rgba(66, 133, 244, 0.12);
   color: #4285f4;
-  box-shadow: 0 4px 14px rgba(66, 133, 244, 0.2);
+  box-shadow: none;
 }
 
 .stat-card-icon.green {
-  background: rgba(16, 185, 129, 0.15);
+  background: rgba(16, 185, 129, 0.12);
   color: #10b981;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2);
+  box-shadow: none;
 }
 
 .stat-card-icon.orange {
-  background: rgba(249, 171, 0, 0.15);
+  background: rgba(249, 171, 0, 0.12);
   color: #f9ab00;
-  box-shadow: 0 4px 14px rgba(249, 171, 0, 0.2);
+  box-shadow: none;
 }
 
 .stat-card-value {
+  grid-area: value;
   font-size: var(--font-size-3xl);
   font-weight: 800;
   font-family: var(--font-en);
   color: var(--text-primary);
   line-height: 1;
-  margin-bottom: var(--space-xs);
+  margin-bottom: 0;
   letter-spacing: -0.02em;
 }
 
 .stat-card-label {
+  grid-area: label;
   font-size: var(--font-size-sm);
   color: var(--text-secondary);
   font-weight: 500;
@@ -812,8 +838,11 @@ input, select, textarea, button {
 
 @media (max-width: 768px) {
   .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: var(--space-md);
+  }
+  .stat-card {
+    padding: 1rem;
   }
 }
 
@@ -986,6 +1015,91 @@ input, select, textarea, button {
   padding: 10px;
 }
 
+/* ============================================
+   Custom Select Dropdown
+   ============================================ */
+.custom-select-container {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select-trigger {
+  width: 100%;
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.custom-select-trigger:hover {
+  border-color: var(--color-primary-light);
+  background: var(--bg-input-hover);
+}
+
+.custom-select-trigger.open {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.15);
+}
+
+.custom-select-icon {
+  color: var(--text-tertiary);
+  transition: transform 0.2s ease;
+}
+
+.custom-select-icon.rotated {
+  transform: rotate(180deg);
+  color: var(--color-primary);
+}
+
+.custom-select-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  max-height: 250px;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 0 0 1px var(--border-glow);
+  z-index: 1000;
+  animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 6px;
+}
+
+.custom-select-option {
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  transition: background 0.15s ease;
+  user-select: none;
+}
+
+.custom-select-option:hover {
+  background: var(--bg-input-hover);
+}
+
+.custom-select-option.selected {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.text-placeholder {
+  color: var(--text-tertiary);
+}
+
+
 /* Date input styling */
 .form-input[type="date"] {
   position: relative;
@@ -1106,6 +1220,12 @@ input, select, textarea, button {
 .table-actions {
   display: flex;
   gap: var(--space-xs);
+}
+
+/* Hide mobile cards by default on desktop */
+.mobile-cards,
+.table-mobile-cards .mobile-cards {
+  display: none;
 }
 
 /* Mobile card view for tables */
@@ -1566,6 +1686,12 @@ input, select, textarea, button {
   color: #e3e3e3;
 }
 
+@media (max-width: 480px) {
+  .login-card {
+    padding: var(--space-xl);
+  }
+}
+
 .login-card .form-label {
   color: #e3e3e3;
 }
@@ -1713,6 +1839,13 @@ input, select, textarea, button {
   gap: var(--space-xl);
 }
 
+@media (max-width: 640px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+}
+
 .detail-field {
   display: flex;
   flex-direction: column;
@@ -1751,6 +1884,13 @@ input, select, textarea, button {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
   gap: var(--space-xl);
+}
+
+@media (max-width: 640px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
 }
 
 .zone-card,

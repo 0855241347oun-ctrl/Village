@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 import { VILLAGES } from '../lib/constants';
 import Modal from '../components/Modal';
+import CustomSelect from '../components/CustomSelect';
 import {
   Shield, UserCog, Search, CheckCircle, XCircle,
   Clock, Phone, MapPin, Edit3, AlertTriangle, Sparkles,
@@ -159,16 +160,17 @@ export default function AdminUsersPage() {
       <div className="filter-bar">
         <div className="filter-group">
           <label><MapPin size={14} /> สถานะ</label>
-          <select
-            className="form-select"
+          <CustomSelect
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="all">ทั้งหมด</option>
-            <option value="pending">รอการอนุมัติ ({users.filter(u => u.status === 'pending').length})</option>
-            <option value="approved">อนุมัติแล้ว</option>
-            <option value="rejected">ปฏิเสธ</option>
-          </select>
+            options={[
+              { value: 'all', label: 'ทั้งหมด' },
+              { value: 'pending', label: `รอการอนุมัติ (${users.filter(u => u.status === 'pending').length})` },
+              { value: 'approved', label: 'อนุมัติแล้ว' },
+              { value: 'rejected', label: 'ปฏิเสธ' }
+            ]}
+            placeholder=""
+          />
         </div>
         <div className="filter-group" style={{ flex: 1 }}>
           <label>ค้นหา</label>
@@ -479,17 +481,13 @@ export default function AdminUsersPage() {
               <MapPin size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
               เลือกหมู่บ้าน
             </label>
-            <select
-              className="form-select"
+            <CustomSelect
               value={editVillage}
               onChange={(e) => setEditVillage(e.target.value)}
+              options={VILLAGES}
+              placeholder="-- เลือกหมู่บ้าน --"
               required
-            >
-              <option value="">-- เลือกหมู่บ้าน --</option>
-              {VILLAGES.map((v) => (
-                <option key={v} value={v}>{v}</option>
-              ))}
-            </select>
+            />
           </div>
           <div className="form-actions">
             <button type="button" className="btn btn-secondary" onClick={() => setVillageModalOpen(false)}>

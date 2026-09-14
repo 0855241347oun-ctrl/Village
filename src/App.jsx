@@ -51,11 +51,11 @@ function PendingApprovalScreen() {
           )}
         </div>
 
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#e3e3e3', marginBottom: '0.5rem' }}>
+        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
           {isRejected ? 'บัญชีถูกปฏิเสธ' : 'รอการอนุมัติจากผู้ดูแลระบบ'}
         </h1>
 
-        <p style={{ color: '#c4c7c5', fontSize: '0.9rem', lineHeight: 1.7, marginBottom: '1.5rem' }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.7, marginBottom: '1.5rem' }}>
           {isRejected
             ? 'บัญชีของคุณถูกปฏิเสธโดยผู้ดูแลระบบ กรุณาติดต่อผู้ดูแลเพื่อสอบถามเพิ่มเติม'
             : 'บัญชีของคุณได้ถูกสร้างเรียบร้อยแล้ว กรุณารอผู้ดูแลระบบอนุมัติการเข้าใช้งาน'}

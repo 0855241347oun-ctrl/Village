@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../lib/auth';
-import { Building2, Eye, EyeOff, Sparkles, Phone, MapPin } from 'lucide-react';
+import { Building2, Eye, EyeOff, Sparkles, Phone, MapPin, Sun, Moon } from 'lucide-react';
 import { VILLAGES } from '../lib/constants';
+import CustomSelect from '../components/CustomSelect';
 
 export default function LoginPage() {
   const { signIn, signUp } = useAuth();
@@ -15,6 +16,19 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('village-theme') || 'light';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('village-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,17 +83,27 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card">
+        <button
+          className="theme-toggle"
+          onClick={toggleTheme}
+          title="สลับธีม"
+          style={{
+            position: 'absolute',
+            top: '1.5rem',
+            right: '1.5rem',
+            zIndex: 10
+          }}
+        >
+          {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+        </button>
         <div className="login-logo">
-          <div className="gemini-pill-tag" style={{ margin: '0 auto 12px auto' }}>
-            <Sparkles size={13} className="gemini-sparkle-spin" /> Gemini AI Experience
-          </div>
           <div className="login-logo-icon">
             <Sparkles size={34} className="gemini-sparkle-spin" />
           </div>
           <h1 className="gemini-brand-title" style={{ justifyContent: 'center', fontSize: '1.75rem' }}>
-            Village <span className="gemini-ai-badge">AI</span>
+            ตำบลบ้านบัว
           </h1>
-          <p>ระบบจัดการหมู่บ้านอัจฉริยะ โฉมใหม่สไตล์ Gemini</p>
+          <p>ระบบจัดการหมู่บ้านอัจฉริยะ</p>
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
@@ -107,17 +131,13 @@ export default function LoginPage() {
                   <MapPin size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
                   เลือกบัญชีหมู่บ้าน <span className="required">*</span>
                 </label>
-                <select
-                  className="form-select"
+                <CustomSelect
                   value={villageName}
                   onChange={(e) => setVillageName(e.target.value)}
+                  options={VILLAGES}
+                  placeholder="-- เลือกหมู่บ้าน --"
                   required
-                >
-                  <option value="">-- เลือกหมู่บ้าน --</option>
-                  {VILLAGES.map((v) => (
-                    <option key={v} value={v}>{v}</option>
-                  ))}
-                </select>
+                />
               </div>
 
               <div className="form-group">

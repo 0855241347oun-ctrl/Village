@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
+import { VILLAGES } from '../lib/constants';
+import CustomSelect from './CustomSelect';
 import { supabase } from '../lib/supabase';
 import {
   LayoutDashboard,
@@ -18,7 +20,10 @@ import {
 } from 'lucide-react';
 
 function Sidebar({ isOpen, onClose }) {
-  const { profile, signOut, isSuperAdmin } = useAuth();
+  const { profile, signOut, isSuperAdmin,
+    adminVillageContext,
+    setAdminVillageContext
+  } = useAuth();
   const location = useLocation();
   const [pendingCount, setPendingCount] = useState(0);
 
@@ -83,10 +88,28 @@ function Sidebar({ isOpen, onClose }) {
             <Sparkles size={22} className="gemini-sparkle-spin" />
           </div>
           <div>
-            <h1 className="gemini-brand-title">Village <span className="gemini-ai-badge">AI</span></h1>
+            <h1 className="gemini-brand-title">{isSuperAdmin ? (adminVillageContext === 'all' ? 'ทุกหมู่บ้าน' : adminVillageContext) : (profile?.village_name || 'Village')} </h1>
             <span className="gemini-brand-sub">ระบบจัดการหมู่บ้านอัจฉริยะ</span>
           </div>
         </div>
+
+        {isSuperAdmin && (
+          <div style={{ padding: '0 1.25rem 1rem 1.25rem', borderBottom: '1px solid var(--border-color)' }}>
+            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              หมู่บ้านที่ทำงานอยู่
+            </label>
+            <CustomSelect
+              value={adminVillageContext}
+              onChange={(e) => setAdminVillageContext(e.target.value)}
+              options={[
+                { value: 'all', label: '🌐 ทุกหมู่บ้าน (ดูทั้งหมด)' },
+                ...VILLAGES.map(v => ({ value: v, label: v }))
+              ]}
+              placeholder="เลือกหมู่บ้าน"
+              style={{ fontSize: '0.85rem' }}
+            />
+          </div>
+        )}
 
         <nav className="sidebar-nav">
           <div className="sidebar-section-title">เมนูหลัก</div>
@@ -233,7 +256,7 @@ export default function Layout({ children }) {
             <Menu size={24} />
           </button>
           <div className="gemini-pill-tag" style={{ margin: 0, display: 'inline-flex' }}>
-            <Sparkles size={13} className="gemini-sparkle-spin" /> Gemini AI System
+            ระบบจัดการหมู่บ้าน
           </div>
         </div>
         <div className="header-right">

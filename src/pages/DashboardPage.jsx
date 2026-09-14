@@ -5,7 +5,7 @@ import { useAuth } from '../lib/auth';
 import { MapPin, Home, Users, ArrowRight, UserPlus, TrendingUp, Sparkles, AlertTriangle, Clock } from 'lucide-react';
 
 export default function DashboardPage() {
-  const { profile, isSuperAdmin } = useAuth();
+  const { profile, isSuperAdmin, adminVillageContext } = useAuth();
   const [stats, setStats] = useState({ zones: 0, houses: 0, residents: 0 });
   const [recentResidents, setRecentResidents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,7 +16,7 @@ export default function DashboardPage() {
     if (isSuperAdmin) {
       fetchPendingCount();
     }
-  }, [isSuperAdmin]);
+  }, [isSuperAdmin, adminVillageContext]);
 
   async function fetchPendingCount() {
     const { count } = await supabase
@@ -28,15 +28,27 @@ export default function DashboardPage() {
 
   async function fetchDashboardData() {
     try {
+      let zonesQuery = supabase.from('zones').select('id', { count: 'exact', head: true });
+      let housesQuery = supabase.from('houses').select('id', { count: 'exact', head: true });
+      let residentsQuery = supabase.from('residents').select('id', { count: 'exact', head: true });
+      let recentQuery = supabase
+        .from('residents')
+        .select('id, first_name, last_name, nickname, created_at, houses(house_number, zones(name))')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (isSuperAdmin && adminVillageContext !== 'all') {
+        zonesQuery = zonesQuery.eq('village_name', adminVillageContext);
+        housesQuery = housesQuery.eq('village_name', adminVillageContext);
+        residentsQuery = residentsQuery.eq('village_name', adminVillageContext);
+        recentQuery = recentQuery.eq('village_name', adminVillageContext);
+      }
+
       const [zonesRes, housesRes, residentsRes, recentRes] = await Promise.all([
-        supabase.from('zones').select('id', { count: 'exact', head: true }),
-        supabase.from('houses').select('id', { count: 'exact', head: true }),
-        supabase.from('residents').select('id', { count: 'exact', head: true }),
-        supabase
-          .from('residents')
-          .select('id, first_name, last_name, nickname, created_at, houses(house_number, zones(name))')
-          .order('created_at', { ascending: false })
-          .limit(5),
+        zonesQuery,
+        housesQuery,
+        residentsQuery,
+        recentQuery,
       ]);
 
       setStats({
@@ -63,14 +75,11 @@ export default function DashboardPage() {
     <div className="animate-fade-in">
       <div className="page-header">
         <div className="page-header-left">
-          <div className="gemini-pill-tag">
-            <Sparkles size={14} className="gemini-sparkle-spin" /> Gemini AI Realtime Overview
-          </div>
           <h1 className="page-title">
-            สวัสดี, <span className="gemini-text-gradient">{profile?.full_name || 'ผู้ดูแลระบบ'}</span> 👋
+            สวัสดี <span className="gemini-text-gradient">{profile?.full_name || 'ผู้ดูแลระบบ'}</span> 👋
           </h1>
           <p className="page-subtitle">
-            ยินดีต้อนรับสู่ระบบจัดการหมู่บ้านอัจฉริยะ ติดตามข้อมูลประชากรและพื้นที่แบบเรียลไทม์
+            ยินดีต้อนรับสู่ระบบจัดการหมู่บ้านอัจฉริยะ ติดตามข้อมูลประชากรและพื้นที่
           </p>
         </div>
       </div>
